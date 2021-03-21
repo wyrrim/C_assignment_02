@@ -4,7 +4,7 @@
  * @brief C assignment 02
  * 
  * 
- * @version 0.3 (with comments)
+ * @version 0.4 (with comments)
  * @date 2021-03-21
  * 
  * @copyright Copyright (c) 2021
@@ -34,11 +34,9 @@ static uint8_t buffer[BUFFER_SIZE] = {0};
 
 void cbuffer_init(void)
 {
-    tail = head = 0; // during normal usage both tail and head are properly initialized,
-                     //   and neither tail nor head can exceed the size of the buffer,
-                     //   so there is no need to zero them (i.e. enough to make them equal: 'tail = head');
-                     //   still using '= 0' to make it safer in case
-                     //   direct access to/changing of these variables is possible
+    tail = head; // during normal usage both tail and head are properly initialized,
+                 //   and neither tail nor head can exceed the size of the buffer,
+                 //   so there is no need to zero them
     full = false;
 }
 
