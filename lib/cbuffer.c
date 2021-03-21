@@ -4,7 +4,7 @@
  * @brief C assignment 02
  * 
  * 
- * @version 0.2
+ * @version 0.3 (with comments)
  * @date 2021-03-21
  * 
  * @copyright Copyright (c) 2021
@@ -34,33 +34,37 @@ static uint8_t buffer[BUFFER_SIZE] = {0};
 
 void cbuffer_init(void)
 {
-    tail = head;
+    tail = head = 0; // during normal usage both tail and head are properly initialized,
+                     //   and neither tail nor head can exceed the size of the buffer,
+                     //   so there is no need to zero them (i.e. enough to make them equal: 'tail = head');
+                     //   still using '= 0' to make it safer in case
+                     //   direct access to/changing of these variables is possible
     full = false;
 }
 
 void cbuffer_write(uint8_t value)
 {
     buffer[tail] = value;
-    tail = (tail + 1) % BUFFER_SIZE;
+    tail = (tail + 1) % BUFFER_SIZE; // shift tail 1 position forward
     if (full)
     {
-        head = tail;
-    }
+        head = tail; // when buffer is full and is being overwritten, head should be shifted forward
+    }                //   together with tail
     else if (tail == head)
     {
-        full = true;
-    }
+        full = true; // when tail catches up with head after shifting forward,
+    }                //   it means that the buffer is full
 }
 
 uint8_t cbuffer_read(void)
 {
     uint8_t value = 0;
 
-    if (cbuffer_available())
+    if (cbuffer_available()) // if (the buffer is not empty) ...
     {
         value = buffer[head];
-        full = false;
-        head = (head + 1) % BUFFER_SIZE;
+        full = false;                    // buffer always becomes not full after reading
+        head = (head + 1) % BUFFER_SIZE; // shift head 1 position forward
     }
 
     return value;
@@ -73,10 +77,10 @@ bool cbuffer_isfull(void)
 
 uint8_t cbuffer_peek(void)
 {
-    return cbuffer_available() ? buffer[head] : 0;
+    return cbuffer_available() ? buffer[head] : 0; // return zero if empty
 }
 
 uint8_t cbuffer_available(void)
 {
-    return full ? BUFFER_SIZE : (tail - head) % BUFFER_SIZE;
+    return full ? BUFFER_SIZE : (tail - head) % BUFFER_SIZE; // since tail and head are unsigned, this works for tail < head as well
 }
