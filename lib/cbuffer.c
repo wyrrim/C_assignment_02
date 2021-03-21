@@ -4,7 +4,7 @@
  * @brief C assignment 02
  * 
  * 
- * @version 0.11
+ * @version 0.2
  * @date 2021-03-21
  * 
  * @copyright Copyright (c) 2021
@@ -34,7 +34,7 @@ static uint8_t buffer[BUFFER_SIZE] = {0};
 
 void cbuffer_init(void)
 {
-    head = tail;
+    tail = head;
     full = false;
 }
 
@@ -73,7 +73,7 @@ bool cbuffer_isfull(void)
 
 uint8_t cbuffer_peek(void)
 {
-    return !cbuffer_available() ? 0 : buffer[head];
+    return cbuffer_available() ? buffer[head] : 0;
 }
 
 uint8_t cbuffer_available(void)
