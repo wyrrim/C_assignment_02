@@ -4,7 +4,7 @@
  * @brief C assignment 02
  * 
  * 
- * @version 0.4 (with comments)
+ * @version 1.0
  * @date 2021-03-21
  * 
  * @copyright Copyright (c) 2021

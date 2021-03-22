@@ -9,7 +9,7 @@
  *            4) Test read/peek/write when the buffer is full (an overwritten occurres when we write to a full buffer)
  *            5) Test read/peek/write when the buffer is not empty and full
  * 
- * @version 0.1
+ * @version 1.0
  * @date 2021-03-16
  * 
  * @copyright Copyright (c) 2021
@@ -34,7 +34,11 @@ void tearDown()
 {
 }
 
-void test_init(void) // Test the initialization of the buffer (incl. 'empty', 'non-empty' and 'full' cases)
+/**
+ * @brief  Test the initialization of the buffer (incl. 'empty', 'non-empty' and 'full' cases)
+ * 
+ */
+void test_init(void)
 {
     // "start" init -- EMPTY BUFFER
     cbuffer_init();
@@ -95,7 +99,11 @@ void test_init(void) // Test the initialization of the buffer (incl. 'empty', 'n
     TEST_ASSERT_EQUAL_UINT8(0U, cbuffer_peek());
 }
 
-void test_empty_full(void) // Test number of accessible elem. in the buffer
+/**
+ * @brief  Test number of accessible elem. in the buffer
+ * 
+ */
+void test_empty_full(void)
 {
     // EMPTY BUFFER
     cbuffer_init();
@@ -163,7 +171,11 @@ void test_empty_full(void) // Test number of accessible elem. in the buffer
     TEST_ASSERT_EQUAL_UINT8(0U, cbuffer_available());
 }
 
-void test_op_when_empty(void) // Test read/peek/write when the buffer is empty
+/**
+ * @brief  Test read/peek/write when the buffer is empty
+ * 
+ */
+void test_op_when_empty(void)
 {
     // BUFFER BECOMES EMPTY AFTER INIT
     cbuffer_init();
@@ -180,29 +192,71 @@ void test_op_when_empty(void) // Test read/peek/write when the buffer is empty
     TEST_ASSERT_EQUAL_UINT8(SOME_VAL_1, cbuffer_peek());
 }
 
-void test_op_when_full(void) // Test read/peek/write when the buffer is full
+/**
+ * @brief  Test read/peek/write when the buffer is full
+ * 
+ */
+void test_op_when_full(void)
 {
-    // BUFFER JUST BECOMES FULL (NO OVERWRITING)
+    cbuffer_init();
+
+    // INITIAL CYCLE TO FILL THE BUFFER:
     uint8_t i = SOME_VAL_1;
     while (!cbuffer_isfull()) // write till the buffer is full
     {
         cbuffer_write(i++);
     }
+    // BUFFER JUST HAS BECOME FULL (NO OVERWRITING)
     TEST_ASSERT_EQUAL_UINT8(SOME_VAL_1, cbuffer_peek());
-    TEST_ASSERT_EQUAL_UINT8(SOME_VAL_1, cbuffer_read()); // 1 place in buffer becomes empty
-    cbuffer_write(SOME_VAL_2);                           // filling the buffer
+    TEST_ASSERT_EQUAL_UINT8(SOME_VAL_1, cbuffer_read()); // one place in buffer becomes empty
 
-    TEST_ASSERT_TRUE(cbuffer_isfull());
-    TEST_ASSERT_EQUAL_UINT8(8U, cbuffer_available());
+    cbuffer_write(SOME_VAL_2);                                // filling the buffer till full state,
+    TEST_ASSERT_EQUAL_UINT8(SOME_VAL_1 + 1U, cbuffer_peek()); // buffer is full, no values are lost yet
 
-    TEST_ASSERT_EQUAL_UINT8(SOME_VAL_1 + 1U, cbuffer_read()); // no values are lost
+    // START TO OVERWRITE:
+    cbuffer_write(SOME_VAL_2 + 1U);                           // writing to full buffer: overwriting {SOME_VAL_1 + 1},
+    TEST_ASSERT_EQUAL_UINT8(SOME_VAL_1 + 2U, cbuffer_peek()); //   which is now lost
 
-    //TEST_ASSERT_EQUAL_UINT8(8U, cbuffer_available());
+    cbuffer_write(SOME_VAL_2 + 2U);                           // writing to full buffer again: overwriting {SOME_VAL_1 + 2}
+    cbuffer_write(SOME_VAL_2 + 3U);                           // writing to full buffer again: overwriting {SOME_VAL_1 + 3}
+    TEST_ASSERT_EQUAL_UINT8(SOME_VAL_1 + 4U, cbuffer_read()); // head moves together with tail if buffer is full,
+                                                              //   so every writing results in a new value to peek/read
 
-    //TEST_ASSERT_EQUAL_UINT8(SOME_VAL_1 + 2U, cbuffer_read()); // no values are lost
-    //cbuffer_write(SOME_VAL_3);                               // writing to full buffer (overwriting),
-    //TEST_ASSERT_EQUAL_UINT8(SOME_VAL_1 + 3, cbuffer_peek()); //   so (SOME_VAL_1 + 2) is lost
-    //TEST_ASSERT_EQUAL_UINT8(SOME_VAL_1 + 3, cbuffer_read());
+    cbuffer_write(SOME_VAL_2 + 4U);                           // filling the buffer till full state,
+    TEST_ASSERT_EQUAL_UINT8(SOME_VAL_1 + 5U, cbuffer_peek()); //   {SOME_VAL_1 + 5} is not lost yet
+    cbuffer_write(SOME_VAL_2 + 5U);
+    cbuffer_write(SOME_VAL_2 + 6U);
+    cbuffer_write(SOME_VAL_2 + 7U);                           // number of written values is equal now to the double size of the buffer,
+    TEST_ASSERT_EQUAL_UINT8(SOME_VAL_2, cbuffer_read());      //  so time to read what was written AFTER the INITIAL CYCLE TO FILL THE BUFFER
+    TEST_ASSERT_EQUAL_UINT8(SOME_VAL_2 + 1U, cbuffer_read()); // {SOME_VAL_2 + 1} was already written OVER the value in the buffer
+}
+
+/**
+ * @brief  Test read/peek/write when the buffer is neither empty nor full
+ * 
+ */
+void test_op_when_filling(void)
+{
+    cbuffer_init();
+
+    // WRITING: FILLING HALF OF BUFFER
+    for (uint8_t i = 0U; i < HALF_OF_BUFFER_SIZE; i++)
+    {
+        cbuffer_write(SOME_VAL_1 + i);
+        TEST_ASSERT_EQUAL_UINT8(i + 1U, cbuffer_available());
+    }
+
+    // READING ALL BUFFER'S CONTENT
+    for (uint8_t i = 0U; i < HALF_OF_BUFFER_SIZE; i++)
+    {
+        TEST_ASSERT_EQUAL_UINT8(SOME_VAL_1 + i, cbuffer_peek());
+        TEST_ASSERT_EQUAL_UINT8(SOME_VAL_1 + i, cbuffer_read());
+    }
+
+    // BUFFER IS EMPTY
+    TEST_ASSERT_EQUAL_UINT8(0U, cbuffer_available());
+    TEST_ASSERT_EQUAL_UINT8(0U, cbuffer_peek());
+    TEST_ASSERT_EQUAL_UINT8(0U, cbuffer_read());
 }
 
 int main(void)
@@ -213,6 +267,7 @@ int main(void)
     RUN_TEST(test_empty_full);
     RUN_TEST(test_op_when_empty);
     RUN_TEST(test_op_when_full);
+    RUN_TEST(test_op_when_filling);
 
     return UNITY_END();
 }
