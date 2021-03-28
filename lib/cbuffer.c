@@ -4,7 +4,7 @@
  * @brief C assignment 02
  * 
  * 
- * @version 1.0
+ * @version 2.0
  * @date 2021-03-21
  * 
  * @copyright Copyright (c) 2021
@@ -30,7 +30,7 @@
 static bool full = false;
 static uint8_t tail = 0U;
 static uint8_t head = 0U;
-static uint8_t buffer[BUFFER_SIZE] = {0};
+static uint8_t buffer[BUFFER_SIZE] = {0U};
 
 void cbuffer_init(void)
 {
@@ -43,7 +43,8 @@ void cbuffer_init(void)
 void cbuffer_write(uint8_t value)
 {
     buffer[tail] = value;
-    tail = (tail + 1) % BUFFER_SIZE; // shift tail 1 position forward
+
+    tail = (tail + 1U) % BUFFER_SIZE; // shift tail 1 position forward
     if (full)
     {
         head = tail; // when buffer is full and is being overwritten, head should be shifted forward
@@ -56,13 +57,13 @@ void cbuffer_write(uint8_t value)
 
 uint8_t cbuffer_read(void)
 {
-    uint8_t value = 0;
+    uint8_t value = 0U;
 
     if (cbuffer_available()) // if (the buffer is not empty) ...
     {
         value = buffer[head];
-        full = false;                    // buffer always becomes not full after reading
-        head = (head + 1) % BUFFER_SIZE; // shift head 1 position forward
+        full = false;                     // buffer always becomes not full after reading
+        head = (head + 1U) % BUFFER_SIZE; // shift head 1 position forward
     }
 
     return value;
@@ -75,10 +76,12 @@ bool cbuffer_isfull(void)
 
 uint8_t cbuffer_peek(void)
 {
-    return cbuffer_available() ? buffer[head] : 0; // return zero if empty
+    return cbuffer_available() ? buffer[head] : 0U; // return zero if empty
 }
 
 uint8_t cbuffer_available(void)
 {
-    return full ? BUFFER_SIZE : (tail - head) % BUFFER_SIZE; // since tail and head are unsigned, this works for tail < head as well
+    //return full ? BUFFER_SIZE : (tail - head) % BUFFER_SIZE; // since tail and head are unsigned, this works for tail < head as well
+    // the above line is valid only for BUFFER_SIZE == sizeof(uint8_t)
+    return tail + (tail < head || full ? BUFFER_SIZE : 0U) - head;
 }

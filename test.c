@@ -119,10 +119,11 @@ void test_empty_full(void)
     TEST_ASSERT_EQUAL_UINT8(HALF_OF_BUFFER_SIZE, cbuffer_available());
 
     // 1 STEP BEFORE FULL BUFFER
-    for (uint8_t i = 0U; i < HALF_OF_BUFFER_SIZE - 1U; i++) // write till 1 step before the buffer is full
-    {                                                       //
-        cbuffer_write(i + SOME_VAL_2);                      //
-    }                                                       //
+    for (uint8_t i = 0U; i < (BUFFER_SIZE - HALF_OF_BUFFER_SIZE) - 1U; i++)         // write till 1 step before the buffer is full
+    {                                                                               //
+        cbuffer_write(i + SOME_VAL_2);                                              //
+        TEST_ASSERT_EQUAL_UINT8(HALF_OF_BUFFER_SIZE + i + 1U, cbuffer_available()); //
+    }                                                                               //
     TEST_ASSERT_FALSE(cbuffer_isfull());
     TEST_ASSERT_EQUAL_UINT8(BUFFER_SIZE - 1U, cbuffer_available());
 
@@ -210,25 +211,33 @@ void test_op_when_full(void)
     TEST_ASSERT_EQUAL_UINT8(SOME_VAL_1, cbuffer_peek());
     TEST_ASSERT_EQUAL_UINT8(SOME_VAL_1, cbuffer_read()); // one place in buffer becomes empty
 
-    cbuffer_write(SOME_VAL_2);                                // filling the buffer till full state,
+    cbuffer_write(SOME_VAL_2);                                // filling the buffer till full state after reading,
     TEST_ASSERT_EQUAL_UINT8(SOME_VAL_1 + 1U, cbuffer_peek()); // buffer is full, no values are lost yet
 
     // START TO OVERWRITE:
-    cbuffer_write(SOME_VAL_2 + 1U);                           // writing to full buffer: overwriting {SOME_VAL_1 + 1},
-    TEST_ASSERT_EQUAL_UINT8(SOME_VAL_1 + 2U, cbuffer_peek()); //   which is now lost
-
-    cbuffer_write(SOME_VAL_2 + 2U);                           // writing to full buffer again: overwriting {SOME_VAL_1 + 2}
-    cbuffer_write(SOME_VAL_2 + 3U);                           // writing to full buffer again: overwriting {SOME_VAL_1 + 3}
-    TEST_ASSERT_EQUAL_UINT8(SOME_VAL_1 + 4U, cbuffer_read()); // head moves together with tail if buffer is full,
-                                                              //   so every writing results in a new value to peek/read
-
-    cbuffer_write(SOME_VAL_2 + 4U);                           // filling the buffer till full state,
-    TEST_ASSERT_EQUAL_UINT8(SOME_VAL_1 + 5U, cbuffer_peek()); //   {SOME_VAL_1 + 5} is not lost yet
-    cbuffer_write(SOME_VAL_2 + 5U);
-    cbuffer_write(SOME_VAL_2 + 6U);
-    cbuffer_write(SOME_VAL_2 + 7U);                           // number of written values is equal now to the double size of the buffer,
-    TEST_ASSERT_EQUAL_UINT8(SOME_VAL_2, cbuffer_read());      //  so time to read what was written AFTER the INITIAL CYCLE TO FILL THE BUFFER
-    TEST_ASSERT_EQUAL_UINT8(SOME_VAL_2 + 1U, cbuffer_read()); // {SOME_VAL_2 + 1} was already written OVER the value in the buffer
+    for (uint8_t i = 0U; i < BUFFER_SIZE; i++)
+    {
+        cbuffer_write(SOME_VAL_2 + i); // head moves together with tail if buffer is full,
+                                       //   so every sequential writing results in a new value to peek/read
+        switch (i)
+        {
+        case 0: // writing to full buffer: {SOME_VAL_1 + 1} is now overwritten and lost;
+            TEST_ASSERT_EQUAL_UINT8(SOME_VAL_1 + 2U, cbuffer_peek());
+            break;
+        case 1: // writing to full buffer again: {SOME_VAL_1 + 2} is now overwritten and lost
+            break;
+        case 2: // writing to full buffer again: {SOME_VAL_1 + 3} is now overwritten and lost
+            TEST_ASSERT_EQUAL_UINT8(SOME_VAL_1 + 4U, cbuffer_read());
+            break; // - head goes ahead of tail because of reading
+        case 3:    // - filling the buffer till full state again after reading: {SOME_VAL_1 + 5} is not lost yet
+            TEST_ASSERT_EQUAL_UINT8(SOME_VAL_1 + 5U, cbuffer_peek());
+            break;
+        default:
+            break;
+        }
+    }                                                    // number of written values is equal now to the double size of the buffer,
+    TEST_ASSERT_EQUAL_UINT8(SOME_VAL_2, cbuffer_read()); //   so time to read what was written AFTER the INITIAL CYCLE TO FILL THE BUFFER
+    TEST_ASSERT_EQUAL_UINT8(SOME_VAL_2 + 1U, cbuffer_read());
 }
 
 /**

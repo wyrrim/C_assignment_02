@@ -5,7 +5,7 @@
 #include <stdbool.h>
 
 // Size of the buffer
-#define BUFFER_SIZE (8U)
+#define BUFFER_SIZE (23U)
 
 /**
  * @brief This function is used to reset the required variables like head and tail of the buffer.
