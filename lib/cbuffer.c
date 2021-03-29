@@ -4,7 +4,7 @@
  * @brief C assignment 02
  * 
  * 
- * @version 2.0
+ * @version 2.1
  * @date 2021-03-21
  * 
  * @copyright Copyright (c) 2021
@@ -44,7 +44,11 @@ void cbuffer_write(uint8_t value)
 {
     buffer[tail] = value;
 
-    tail = (tail + 1U) % BUFFER_SIZE; // shift tail 1 position forward
+    //tail = (tail + 1U) % BUFFER_SIZE; // shift tail 1 position forward
+    if (++tail == BUFFER_SIZE) // to avoid '%'
+    {
+        tail = 0U;
+    }
     if (full)
     {
         head = tail; // when buffer is full and is being overwritten, head should be shifted forward
@@ -62,8 +66,12 @@ uint8_t cbuffer_read(void)
     if (cbuffer_available()) // if (the buffer is not empty) ...
     {
         value = buffer[head];
-        full = false;                     // buffer always becomes not full after reading
-        head = (head + 1U) % BUFFER_SIZE; // shift head 1 position forward
+        full = false; // buffer always becomes not full after reading
+        //head = (head + 1U) % BUFFER_SIZE; // shift head 1 position forward
+        if (++head == BUFFER_SIZE) // to avoid '%'
+        {
+            head = 0U;
+        }
     }
 
     return value;
